@@ -6,6 +6,9 @@ import torch
 import torch.nn as nn
 import torchvision.models as models
 import os
+import nvidia.dali as dali
+import nvidia.dali.types as types
+import os
 
 NUM_CLASSES = args.n_classes
 INPUT_SHAPE = (3, args.image_size, args.image_size)
@@ -13,15 +16,178 @@ OPT_BATCH = 8
 MAX_BATCH = 128
 MIN_BATCH = 1
 
+
+def get_pbtxt_onnx():
+    return f"""
+name: "{args.model_name}_onnx"
+platform: "onnxruntime_onnx"
+dynamic_batching {{
+preferred_batch_size: [8,16,32]
+max_queue_delay_microseconds: 100
+}}
+
+max_batch_size: {MAX_BATCH}
+input {{
+  name: "input"
+  data_type: TYPE_FP32
+  dims: [ {', '.join(map(str, INPUT_SHAPE))} ]
+}}
+output {{
+  name: "output"
+  data_type: TYPE_FP32
+  dims: [{NUM_CLASSES}]
+}}
+
+
+instance_group [
+    {{
+        count: 1
+        kind: KIND_GPU
+        gpus: [0]
+    }}
+]
+
+default_model_filename: "model.onnx"
+"""
+
+
+def get_pbtxt_torch():
+    return f"""
+name: "{args.model_name}_torch"
+platform: "pytorch_libtorch"
+dynamic_batching {{
+preferred_batch_size: [8,16,32]
+max_queue_delay_microseconds: 100
+}}
+
+max_batch_size: {MAX_BATCH}
+input {{
+  name: "input__0"
+  data_type: TYPE_FP32
+  dims: [ {', '.join(map(str, INPUT_SHAPE))} ]
+}}
+output {{
+  name: "output__0"
+  data_type: TYPE_FP32
+  dims: [{NUM_CLASSES}]
+}}
+
+
+instance_group [
+    {{
+        count: 1
+        kind: KIND_GPU
+        gpus: [0]
+    }}
+]
+
+default_model_filename: "model.pt"
+"""
+
+
+def get_pbtxt_fp(bits: int):
+    post = f"trt_fp{bits}" if bits != 8 else "int8"
+    return f"""
+name: "{args.model_name}_{post}"
+platform: "tensorrt_plan"
+dynamic_batching {{
+preferred_batch_size: [8,16,32]
+max_queue_delay_microseconds: 100
+}}
+
+max_batch_size: {MAX_BATCH}
+input {{
+  name: "input"
+  data_type: TYPE_FP32
+  dims: [ {', '.join(map(str, INPUT_SHAPE))} ]
+}}
+output {{
+  name: "output"
+  data_type: TYPE_FP32
+  dims: {NUM_CLASSES}
+}}
+
+
+instance_group [
+    {{
+        count: 1
+        kind: KIND_GPU
+        gpus: [0]
+    }}
+]
+
+default_model_filename: "model.plan"
+"""
+
+def get_pbtxt_dali():
+    return f"""
+name: "dali_{args.model_name}"
+backend: "dali"
+max_batch_size: {MAX_BATCH}
+input [
+{{
+    name: "DALI_INPUT_0"
+    data_type: TYPE_UINT8
+    dims: [ -1 ]
+}}
+]
+ 
+output [
+{{
+    name: "DALI_OUTPUT_0"
+    data_type: TYPE_FP32
+    dims: [ {', '.join(map(str, INPUT_SHAPE))} ]
+}}
+]
+
+"""
+
+
+def create_dali_pipeline():
+    @dali.pipeline_def(batch_size=256, num_threads=4, device_id=0)
+    def pipe():
+        images = dali.fn.external_source(device="cpu", name="DALI_INPUT_0")
+        images = dali.fn.decoders.image(images, device="mixed", output_type=types.RGB)
+        images = dali.fn.resize(images, resize_x=INPUT_SHAPE[-2], resize_y=INPUT_SHAPE[-1])
+        images = dali.fn.crop_mirror_normalize(images,
+                                            dtype=types.FLOAT,
+                                            output_layout="CHW",
+                                            crop=INPUT_SHAPE[1:],
+                                            mean=[0.485 * 255, 0.456 * 255, 0.406 * 255],
+                                            std=[0.229 * 255, 0.224 * 255, 0.225 * 255])
+        return images
+    
+    os.makedirs(f"{args.triton_dir}{args.model_name}_dali/1")
+    pipe().serialize(filename=f"{args.triton_dir}{args.model_name}_dali/1/model.dali")
+
+    # write pbtxt
+    with open(f"{args.triton_dir}{args.model_name}_dali/config.pbtxt", "w") as f:
+        f.write(get_pbtxt_dali())
+
 def main():
-    for d in ('torch', 'onnx', 'trt_fp32', 'trt_fp16', 'trt_int8'):
+    for d in ('torch', 'onnx', 'trt_fp32', 'trt_fp16', 'trt_int8', 'dali'):
         os.system(f'rm -rf {args.triton_dir}{args.model_name}_{d}/')
+
+    # create dali model
+    create_dali_pipeline()
 
     os.makedirs(f"{args.triton_dir}{args.model_name}_torch/1")
     os.makedirs(f"{args.triton_dir}{args.model_name}_onnx/1")
     os.makedirs(f"{args.triton_dir}{args.model_name}_trt_fp32/1")
     os.makedirs(f"{args.triton_dir}{args.model_name}_trt_fp16/1")
     os.makedirs(f"{args.triton_dir}{args.model_name}_trt_int8/1")
+
+    # save config.pbtxt
+    with open(f"{args.triton_dir}{args.model_name}_torch/config.pbtxt", "w") as f:
+        f.write(get_pbtxt_torch())
+    with open(f"{args.triton_dir}{args.model_name}_onnx/config.pbtxt", "w") as f:
+        f.write(get_pbtxt_onnx())
+    with open(f"{args.triton_dir}{args.model_name}_trt_fp32/config.pbtxt", "w") as f:
+        f.write(get_pbtxt_fp(32))
+    with open(f"{args.triton_dir}{args.model_name}_trt_fp16/config.pbtxt", "w") as f:
+        f.write(get_pbtxt_fp(16))
+    with open(f"{args.triton_dir}{args.model_name}_trt_int8/config.pbtxt", "w") as f:
+        f.write(get_pbtxt_fp(8))
     
     JIT_MODEL_PATH = f'{args.triton_dir}{args.model_name}_torch/1/model.pt'
     ONNX_MODEL_PATH = f'{args.triton_dir}{args.model_name}_onnx/1/model.onnx'

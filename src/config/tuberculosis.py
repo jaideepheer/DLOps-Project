@@ -31,8 +31,8 @@ def build_args(*_, task_name = None, model_name = None, **overrides):
 
         ######### MODEL parameters ########
         'model_name'               : model_name,
-        'out_weight_dir'           : f'/workspace/Assignment_1/saved/{task_name}',
-        'out_weight'               : f'/workspace/Assignment_1/saved/{task_name}/{model_name}.pt',
+        'out_weight_dir'           : f'/workspace/Assignment_1/saved_models/{task_name}',
+        'out_weight'               : f'/workspace/Assignment_1/saved_models/{task_name}/{model_name}.pt',
         'image_size'               : 512,
         'n_classes'                : 2,
         ##################################

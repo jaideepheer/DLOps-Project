@@ -21,7 +21,7 @@ image="dlops/labs:nvidia01"
 # echo "Enter Filepath"
 # read filepath
 
-filepath="/workspace/Assignment_1/scripts/src/main.py"
+filepath="/workspace/Assignment_1/src/main.py"
 
 echo "Enter Mode"
 
@@ -39,6 +39,10 @@ echo "Enter jobname"
 
 read job
 
+echo "Use wandb [True/False]?"
+
+read wandb
+
 gpu=1
 
 echo "Will use key $WANDB_API_KEY"
@@ -55,10 +59,12 @@ spec:
       - name: $job
         image: $image
         command: ["python3"]
-        args: ["${filepath}", "--mode", "${mode}", "-C", "${config}", "--model", "${model}"]
+        args: ["${filepath}", "--mode", "${mode}", "-C", "${config}", "--model", "${model}", "--wandb", "${wandb}"]
         env:
           - name: WANDB_API_KEY
             value: $WANDB_API_KEY
+          - name: PYTHONPATH
+            value: /workspace/Assignment_1
         resources:
           limits:
             nvidia.com/gpu: $gpu
