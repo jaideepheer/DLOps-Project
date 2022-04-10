@@ -12,13 +12,13 @@ read deployment
 
 echo "Enter triton http port"
 
-# read httpport
-httpport=30769
+read httpport
+# httpport=30769
 
 echo "Enter triton grpc port"
 
-# read grpcport
-grpcport=30970
+read grpcport
+# grpcport=30970
 
 username=$(whoami)
 
