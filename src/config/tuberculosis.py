@@ -11,13 +11,13 @@ def build_args(*_, task_name = None, model_name = None, **overrides):
     task_name = task_name or 'tuberculosis'
     model_name = model_name or 'resnet18'
     return {
-        'data_dir'                 : f'/workspace/Assignment_1/data/{task_name}',
-        'image_dir'                : f'/workspace/Assignment_1/data/{task_name}',
-        'df_train'                 : f'/workspace/Assignment_1/data/{task_name}/train.csv',
-        'df_val'                   : f'/workspace/Assignment_1/data/{task_name}/val_split.csv',
-        'df_test'                  : f'/workspace/Assignment_1/data/{task_name}/test.csv',
-        'vocab'                    : f'/workspace/Assignment_1/data/{task_name}/labels.json',
-        'triton_dir'               : f"/workspace/Assignment_1/triton_model_repository/{task_name}/",
+        'data_dir'                 : f'/workspace/data/{task_name}',
+        'image_dir'                : f'/workspacedata/{task_name}',
+        'df_train'                 : f'/workspace/data/{task_name}/train.csv',
+        'df_val'                   : f'/workspace/data/{task_name}/val_split.csv',
+        'df_test'                  : f'/workspace/data/{task_name}/test.csv',
+        'vocab'                    : f'/workspace/data/{task_name}/labels.json',
+        'triton_dir'               : f"/workspace/triton_model_repository/{task_name}/",
 
         'GPU_ID'                   : '0',
         'batch_size'               : 32,
@@ -31,8 +31,8 @@ def build_args(*_, task_name = None, model_name = None, **overrides):
 
         ######### MODEL parameters ########
         'model_name'               : model_name,
-        'out_weight_dir'           : f'/workspace/Assignment_1/saved_models/{task_name}',
-        'out_weight'               : f'/workspace/Assignment_1/saved_models/{task_name}/{model_name}.pt',
+        'out_weight_dir'           : f'/workspace/saved_models/{task_name}',
+        'out_weight'               : f'/workspace/saved_models/{task_name}/{model_name}.pt',
         'image_size'               : 512,
         'n_classes'                : 2,
         ##################################

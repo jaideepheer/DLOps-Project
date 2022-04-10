@@ -1,12 +1,11 @@
 #!/bin/bash
 
-echo "Enter Container Image"
+image="nvcr.io/nvidia/tritonserver:21.08-py3"
+# image="dlops/labs:nvidia01"
 
-read image
+rootpath="$(realpath $(dirname $(realpath "${BASH_SOURCE[-1]}"))/../)"
 
-echo "Enter Model Repo Path"
-
-read systempath
+repopath="${rootpath}/triton_model_repository/tuberculosis/"
 
 gpus=1
 
@@ -52,11 +51,11 @@ spec:
       volumes:
       - name: raid
         hostPath:
-          path: $systempath
+          path: $repopath
 
 EOF
 
-cd $HOME
+pushd $HOME
 
 kubectl create -f ${username}-dep.yaml
 
@@ -104,3 +103,5 @@ echo "Welcome to NVIDIA DGX A100 Cluster. Ports for HTTP, GRPC and Promethous ar
 echo "$host_ip_link"
 
 echo $host_ip_link > triton-login-$deployment.txt
+
+popd

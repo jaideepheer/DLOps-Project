@@ -2,26 +2,9 @@
 
 username=$(whoami)
 
-# echo "Enter Container Image"
-
-# read image
-
 image="dlops/labs:nvidia01"
 
-# echo "Is train/convert/eval task [y/n]?"
-
-# read yn
-# if [ "$yn" = "y" ]; then
-#   filepath="/workspace/Assignment_1/scripts/src/main.py"
-# else
-#   echo "wht??"
-#   return
-# fi
-
-# echo "Enter Filepath"
-# read filepath
-
-filepath="/workspace/Assignment_1/src/main.py"
+rootpath="$(realpath $(dirname $(realpath "${BASH_SOURCE[-1]}"))/../)"
 
 echo "Enter Mode"
 
@@ -59,12 +42,12 @@ spec:
       - name: $job
         image: $image
         command: ["python3"]
-        args: ["${filepath}", "--mode", "${mode}", "-C", "${config}", "--model", "${model}", "--wandb", "${wandb}"]
+        args: ["/workspace/src/main.py", "--mode", "${mode}", "-C", "${config}", "--model", "${model}", "--wandb", "${wandb}"]
         env:
           - name: WANDB_API_KEY
             value: $WANDB_API_KEY
           - name: PYTHONPATH
-            value: /workspace/Assignment_1
+            value: /workspace
         resources:
           limits:
             nvidia.com/gpu: $gpu
@@ -78,7 +61,7 @@ spec:
       volumes:
       - name: raid
         hostPath:
-          path: /raid/dlops-course/${username}
+          path: ${rootpath}
       # Shared memory hack
       # https://stackoverflow.com/a/46434614/10027894
       # https://github.com/kubernetes/kubernetes/pull/63641
