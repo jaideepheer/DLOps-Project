@@ -44,9 +44,9 @@ def model_performance():
     url = os.environ['TRITON_HTTP_URL'] if protocol == "gRPC" else os.environ['TRITON_GRPC_URL']
 
     if model.endswith('torch') or model.endswith('onnx'):
-        cmd = f"perf_analyzer -u {url} -m {model} --concurrency-range {str(conc_start)}:{str(conc_end)}:{str(conc_step)} -i {protocol} -p {str(measurement_int)} --shape input__0:{batch_size},3,512,512 -f test.csv"
+        cmd = f"perf_analyzer -u {url} -m {model} --concurrency-range {str(conc_start)}:{str(conc_end)}:{str(conc_step)} -i {protocol} -p {str(measurement_int)} --shape input__0:{batch_size},3,512,512 -f /workspace/app/test.csv"
     else:
-        cmd = f"perf_analyzer -u {url} -m {model} --concurrency-range {str(conc_start)}:{str(conc_end)}:{str(conc_step)} -i {protocol} -p {str(measurement_int)} -b {batch_size} -f test.csv"
+        cmd = f"perf_analyzer -u {url} -m {model} --concurrency-range {str(conc_start)}:{str(conc_end)}:{str(conc_step)} -i {protocol} -p {str(measurement_int)} -b {batch_size} -f /workspace/app/test.csv"
 
     st.markdown(f"Command used: `{cmd}`")
     
@@ -55,6 +55,7 @@ def model_performance():
         gif_runner = st.image("/workspace/app/loading.gif")
         stream = os.popen(cmd)
         out = stream.read()
+        print(out)
         gif_runner.empty()
         
         data = pd.read_csv('/workspace/app/test.csv', index_col=0)

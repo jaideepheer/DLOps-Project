@@ -5,6 +5,7 @@ image="dlops/labs:nvidia01"
 rootpath="$(realpath $(dirname $(realpath "${BASH_SOURCE[-1]}"))/../)"
 
 host_ip="$(hostname -I | cut -f1 -d' ')"
+# host_ip="10.100.79.117"
 
 echo "Enter Pod Name"
 
