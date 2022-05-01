@@ -14,4 +14,7 @@ missing = required - installed
 if missing:
     print(f"Installing missing packages: {missing}")
     # implement pip as a subprocess:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", *missing])
+    subprocess.check_call([sys.executable, "-m", "pip", "install", *missing, "-U"])
+
+# install latest DALI
+subprocess.check_call([sys.executable, "-m", "pip", "install", "--extra-index-url", "https://developer.download.nvidia.com/compute/redist", "-U", "nvidia-dali-cuda110"])
