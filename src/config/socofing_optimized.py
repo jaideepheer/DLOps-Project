@@ -38,7 +38,7 @@ def build_args(*_, task_name=None, model_name=None, root_dir="/workspace", **ove
         ##################################
         "distributed": False,
         "local_rank": 0,
-        "amp": True,
+        "amp": False,
         "opt_level": "O2",
         "wandb": True,
         "project_name": f"task_{task_name}",

@@ -1,6 +1,5 @@
 from torchvision import transforms
 from torch.utils.data import Dataset, DataLoader
-from apex.parallel import DistributedDataParallel
 from torch.utils.data.distributed import DistributedSampler
 import numpy as np
 import pandas as pd
