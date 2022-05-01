@@ -1,13 +1,16 @@
+from src.conf import args
 import streamlit as st
 import os
 from PIL import Image
-import torch
 import pandas as pd
-import matplotlib.pyplot as plt
 import numpy as np
 import base64
 from itertools import product
+import time
+import json
 
+import tritonclient.http as http_client
+import tritonclient.grpc as grpc_client
 
 model_names = [
     f"ensemble_dali_{model}_{mode}"
@@ -16,7 +19,102 @@ model_names = [
     )
 ]
 
+model_configuration = {
+    "http_url": os.environ["TRITON_HTTP_URL"],
+    "grpc_url": os.environ["TRITON_GRPC_URL"],
+    "model_version": "1",
+    "verbose": False,
+    "dtype": "UINT8",
+}
+
 print(model_names)
+
+
+imagenet_mean = np.array([[[0.485]], [[0.456]], [[0.406]]])
+imagenet_std = np.array([[[0.229]], [[0.224]], [[0.225]]])
+
+
+with open("/workspace/app/labels.json") as file:
+    labels = json.load(file)
+
+
+def softmax(x):
+    """Compute softmax values for each sets of scores in x."""
+    e_x = np.exp(x - np.max(x))
+    return e_x / e_x.sum()
+
+
+def load_image(img_path: str):
+    """
+    Loads an encoded image as an array of bytes.
+
+    This is a typical approach you'd like to use in DALI backend.
+    DALI performs image decoding, therefore this way the processing
+    can be fully offloaded to the GPU.
+    """
+    return np.fromfile(img_path, dtype='uint8')
+
+
+def top_k_predictions(file, model, transform):
+    """
+    Returns predictions obtained by running the specified
+    file using the specified model and transforms
+    """
+    data = np.expand_dims(load_image(file), axis=0)
+    triton_http_client = http_client.InferenceServerClient(
+        url=model_configuration["http_url"], verbose=model_configuration["verbose"]
+    )
+    input0 = http_client.InferInput("INPUT", data.shape, model_configuration["dtype"])
+    input0.set_data_from_numpy(data)
+
+    output = http_client.InferRequestedOutput("OUTPUT")
+
+    start_time = time.time()
+    response = triton_http_client.infer(
+        model,
+        model_version="1",
+        inputs=[input0],
+        outputs=[output],
+    )
+    # result = response.get_response()
+    end_time = time.time()
+
+    total_inference_time = end_time - start_time
+    predictions = softmax(response.as_numpy("OUTPUT"))[0]
+    pred = pd.DataFrame(np.array(predictions), index=labels, columns=["Image"])
+
+    return pred, total_inference_time
+
+
+def model_inference():
+    """
+    Page for model inference. Has functionality to upload an image and run inference on
+    multiple models, with the facility to apply any data augmentation of choice
+    """
+
+    file_up = st.file_uploader("Upload an image", type="bmp")
+
+    model = st.sidebar.selectbox(
+        "Choose Model for Inferencing from Triton Inference Server ",
+        model_names,
+    )
+
+    if file_up is not None:
+        image = Image.open(file_up).convert("RGB")
+        st.image(image, caption="Uploaded Image.", use_column_width=True)
+
+    is_run = st.sidebar.button("Run Inference")
+
+    if is_run:
+        if file_up is not None:
+            labels, total_inference_time = top_k_predictions(file_up, model, None)
+            st.write(
+                "Total Inference Time is {:.5f} seconds".format(total_inference_time)
+            )
+            st.write("Predicted Class and Scores")
+            st.bar_chart(labels)
+        else:
+            st.error("First upload an image")
 
 
 def model_performance():
@@ -66,10 +164,10 @@ def model_performance():
         else os.environ["TRITON_GRPC_URL"]
     )
 
-    if model.endswith("torch") or model.endswith("onnx"):
-        cmd = f"perf_analyzer -u {url} -m {model} --concurrency-range {str(conc_start)}:{str(conc_end)}:{str(conc_step)} -i {protocol} -p {str(measurement_int)} --shape input__0:{batch_size},3,512,512 -f /workspace/app/test.csv"
-    else:
-        cmd = f"perf_analyzer -u {url} -m {model} --concurrency-range {str(conc_start)}:{str(conc_end)}:{str(conc_step)} -i {protocol} -p {str(measurement_int)} -b {batch_size} -f /workspace/app/test.csv"
+    # if model.endswith("torch") or model.endswith("onnx"):
+    #     cmd = f"perf_analyzer -u {url} -m {model} --concurrency-range {str(conc_start)}:{str(conc_end)}:{str(conc_step)} -i {protocol} -p {str(measurement_int)} --shape INPUT:{batch_size},3,512,512 -f /workspace/app/test.csv"
+    # else:
+    cmd = f"perf_analyzer -u {url} -m {model} --concurrency-range {str(conc_start)}:{str(conc_end)}:{str(conc_step)} -i {protocol} -p {str(measurement_int)} -b {batch_size} -f /workspace/app/test.csv"
 
     st.markdown(f"Command used: `{cmd}`")
 
@@ -106,5 +204,13 @@ def model_performance():
 
 if __name__ == "__main__":
 
-    st.title("NVIDIA Image Classification Application")
-    model_performance()
+    st.title("NVIDIA Image Classification for SOCOFing Data")
+
+    page = st.sidebar.selectbox(
+        "Choose your page", ["Model Inference", "Model Performance"]
+    )
+
+    if page == "Model Inference":
+        model_inference()
+    elif page == "Model Performance":
+        model_performance()

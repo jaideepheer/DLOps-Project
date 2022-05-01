@@ -6,7 +6,7 @@ import argparse, torch
 
 parser = argparse.ArgumentParser(description="")
 
-parser.add_argument("-C", "--config", default="socofing", help="config filename")
+parser.add_argument("-C", "--config", default="socofing_optimized", help="config filename")
 parser.add_argument("--model", default=None, type=str, help="args.model_name")
 parser.add_argument("--wandb", default=True, type=bool, help="args.wandb")
 parser.add_argument("--rootdir", default="/workspace", type=str, help="args.rootdir")

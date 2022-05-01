@@ -5,9 +5,10 @@ import subprocess
 import pkg_resources
 
 required = {
-    "wandb",
-    "rich",
     "streamlit",
+    "Pillow",
+    "pandas",
+    "numpy"
 }
 installed = {pkg.key for pkg in pkg_resources.working_set}
 missing = required - installed
