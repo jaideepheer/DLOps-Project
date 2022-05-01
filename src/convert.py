@@ -16,7 +16,7 @@ OPT_BATCH = 8
 MAX_BATCH = 128
 MIN_BATCH = 1
 # DGX-2 GPUs have 32GB memory
-GPU_MEMORY_MB = 30_000
+GPU_MEMORY_MB = 20_000
 
 
 model_kinds = ["torch", "onnx", "trt_fp32", "trt_fp16", "trt_int8"]
