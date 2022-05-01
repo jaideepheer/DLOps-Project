@@ -20,4 +20,5 @@ if missing:
 print("Setup done.")
 
 # Run streamlit
-subprocess.check_call([sys.executable, "-m", "streamlit", *sys.argv[2:]])
+print(f"Running bootstrap {sys.argv[1:]}")
+subprocess.check_call([sys.executable, *sys.argv[1:]])

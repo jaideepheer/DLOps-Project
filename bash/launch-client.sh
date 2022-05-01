@@ -54,7 +54,7 @@ spec:
         ports:
         - containerPort: 8501
         command: [ "python3" ]
-        args: [ "${rootdir}/app/setup.py", "run", "${rootdir}/app/app.py" ] 
+        args: [ "${rootdir}/app/setup.py", "-m", "streamlit", "${rootdir}/app/app.py" ] 
         env:
           - name: TRITON_HTTP_URL
             value: ${host_ip}:${httpport}
