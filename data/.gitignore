@@ -1,1 +1,5 @@
-tuberculosis/
+**/*
+!.gitignore
+!gen_data_csv.py
+!labels.json
+!Readme.md

@@ -1,6 +1,8 @@
 #!/bin/bash
 
-image="nvcr.io/nvidia/tritonserver:21.08-py3"
+# For the DGX-2 server, we have CUDA 11.2.1
+# See: https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html
+image="nvcr.io/nvidia/tritonserver:21.03-py3"
 # image="dlops/labs:nvidia01"
 
 rootpath="$(realpath $(dirname $(realpath "${BASH_SOURCE[-1]}"))/../)"

@@ -1,6 +1,8 @@
 #!/bin/bash
 
-image="dlops/labs:nvidia01"
+# For the DGX-2 server, we have CUDA 11.2.1
+# See: https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html
+image="nvcr.io/nvidia/pytorch:21.03-py3"
 
 rootpath="$(realpath $(dirname $(realpath "${BASH_SOURCE[-1]}"))/../)"
 
