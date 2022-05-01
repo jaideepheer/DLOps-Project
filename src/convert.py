@@ -80,7 +80,7 @@ input [
 {{
     name: "DALI_INPUT_0"
     data_type: TYPE_UINT8
-    dims: [ -1 ]
+    dims: [ -1, -1, -1 ]
 }}
 ]
  
@@ -104,7 +104,7 @@ input [
   {{
     name: "INPUT"
     data_type: TYPE_UINT8
-    dims: [ -1 ]
+    dims: [ -1, -1, -1 ]
   }}
 ]
 output [
@@ -151,7 +151,7 @@ def create_dali_pipeline():
         images = dali.fn.external_source(device="cpu", name="DALI_INPUT_0")
         images = dali.fn.decoders.image(images, device="mixed", output_type=types.RGB)
         images = dali.fn.resize(
-            images, resize_x=INPUT_SHAPE[-2], resize_y=INPUT_SHAPE[-1]
+            images, resize_y=INPUT_SHAPE[-2], resize_x=INPUT_SHAPE[-1]
         )
         images = dali.fn.crop_mirror_normalize(
             images,

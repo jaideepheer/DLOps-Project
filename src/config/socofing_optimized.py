@@ -33,7 +33,7 @@ def build_args(*_, task_name=None, model_name=None, root_dir="/workspace", **ove
         "model_name": model_name,
         "out_weight_dir": f"{str(root_dir)}/saved_models/{task_name}",
         "out_weight": f"{str(root_dir)}/saved_models/{task_name}/{model_name}.pt",
-        "image_size": (96, 103),
+        "image_size": (103, 96),
         "n_classes": 2,
         ##################################
         "distributed": False,

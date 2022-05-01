@@ -13,7 +13,7 @@ import tritonclient.http as http_client
 import tritonclient.grpc as grpc_client
 
 model_names = [
-    f"ensemble_dali_{model}_{mode}"
+    f"{model}_{mode}"
     for model, mode in product(
         ["resnet50"], ["torch", "onnx", "trt_fp32", "trt_fp16", "trt_int8"]
     )
@@ -24,7 +24,7 @@ model_configuration = {
     "grpc_url": os.environ["TRITON_GRPC_URL"],
     "model_version": "1",
     "verbose": False,
-    "dtype": "UINT8",
+    "dtype": "FP32",
 }
 
 print(model_names)
@@ -52,22 +52,27 @@ def load_image(img_path: str):
     DALI performs image decoding, therefore this way the processing
     can be fully offloaded to the GPU.
     """
-    return np.fromfile(img_path, dtype='uint8')
+    img = np.array(Image.open(img_path).convert("RGB"), dtype=np.float32).transpose(
+        2, 1, 0
+    )
+    return np.array((img - imagenet_mean) / imagenet_std, dtype=np.float32)
 
 
-def top_k_predictions(file, model, transform):
+def top_k_predictions(data, model, transform):
     """
     Returns predictions obtained by running the specified
     file using the specified model and transforms
     """
-    data = np.expand_dims(load_image(file), axis=0)
+    data = np.array([load_image(data)])
     triton_http_client = http_client.InferenceServerClient(
         url=model_configuration["http_url"], verbose=model_configuration["verbose"]
     )
-    input0 = http_client.InferInput("INPUT", data.shape, model_configuration["dtype"])
+    input0 = http_client.InferInput(
+        "input__0", data.shape, model_configuration["dtype"]
+    )
     input0.set_data_from_numpy(data)
 
-    output = http_client.InferRequestedOutput("OUTPUT")
+    output = http_client.InferRequestedOutput("output__0")
 
     start_time = time.time()
     response = triton_http_client.infer(
@@ -80,7 +85,8 @@ def top_k_predictions(file, model, transform):
     end_time = time.time()
 
     total_inference_time = end_time - start_time
-    predictions = softmax(response.as_numpy("OUTPUT"))[0]
+    resp = response.as_numpy("output__0")[0]
+    predictions = softmax(resp)
     pred = pd.DataFrame(np.array(predictions), index=labels, columns=["Image"])
 
     return pred, total_inference_time
@@ -93,6 +99,9 @@ def model_inference():
     """
 
     file_up = st.file_uploader("Upload an image", type="bmp")
+
+    st.write(f"Connection URL: {model_configuration['http_url']}")
+    print(f"Connection URL: {model_configuration['http_url']}")
 
     model = st.sidebar.selectbox(
         "Choose Model for Inferencing from Triton Inference Server ",
@@ -163,6 +172,9 @@ def model_performance():
         if protocol == "gRPC"
         else os.environ["TRITON_GRPC_URL"]
     )
+
+    st.write(f"Connection URL: {url}")
+    print(f"Connection URL: {url}")
 
     # if model.endswith("torch") or model.endswith("onnx"):
     #     cmd = f"perf_analyzer -u {url} -m {model} --concurrency-range {str(conc_start)}:{str(conc_end)}:{str(conc_step)} -i {protocol} -p {str(measurement_int)} --shape INPUT:{batch_size},3,512,512 -f /workspace/app/test.csv"
