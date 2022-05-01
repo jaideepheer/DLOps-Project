@@ -6,3 +6,4 @@ triton_model_repository/
 .pytest_cache
 .mypy_cache
 wandb
+.cache

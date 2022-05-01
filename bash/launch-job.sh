@@ -9,7 +9,7 @@ image="nvcr.io/nvidia/pytorch:21.03-py3"
 rootpath="$(realpath $(dirname $(realpath "${BASH_SOURCE[-1]}"))/../)"
 
 # DGX-2 server specific, comment this out
-rootpath="/DATA1/$username/$(basename $rootpath)"
+rootpath="/DATA1/$username/dlops_project"
 
 echo "Mounting code from: $rootpath"
 
@@ -67,6 +67,9 @@ spec:
         volumeMounts:
         - name: raid
           mountPath: "${rootdir}"
+        # preserve pip cache
+        - name: cache
+          mountPath: /.cache
         # Shared memory hack
         # https://stackoverflow.com/a/46434614/10027894
         - mountPath: /dev/shm
@@ -75,6 +78,10 @@ spec:
       - name: raid
         hostPath:
           path: ${rootpath}
+          type: Directory
+      - name: cache
+        hostPath:
+          path: ${rootpath}/.cache
           type: Directory
       # Shared memory hack
       # https://stackoverflow.com/a/46434614/10027894
