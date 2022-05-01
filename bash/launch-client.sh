@@ -5,6 +5,8 @@
 image="nvcr.io/nvidia/pytorch:21.03-py3"
 
 rootpath="$(realpath $(dirname $(realpath "${BASH_SOURCE[-1]}"))/../)"
+# DGX-2 server specific, comment this out
+rootpath="/DATA1/$username/dlops_project"
 
 host_ip="$(hostname -I | cut -f1 -d' ')"
 # host_ip="10.100.79.117"
@@ -24,6 +26,7 @@ read grpcport
 # grpcport=30970
 
 username=$(whoami)
+rootdir='/workspace'
 
 cat <<EOF >$HOME/${username}-dep.yaml
 apiVersion: apps/v1
@@ -51,18 +54,20 @@ spec:
         ports:
         - containerPort: 8501
         command: [ "streamlit" ]
-        args: [ "run", "/workspace/app/app.py" ] 
+        args: [ "run", "${rootdir}/app/app.py" ] 
         env:
           - name: TRITON_HTTP_URL
             value: ${host_ip}:${httpport}
           - name: TRITON_GRPC_URL
             value: ${host_ip}:${grpcport}
+          - name: PYTHONPATH
+            value: "${rootdir}"
         resources:
           limits:
             nvidia.com/gpu: 0
         volumeMounts:
         - name: raid
-          mountPath: /workspace
+          mountPath: "${rootdir}"
       volumes:
       - name: raid
         hostPath:

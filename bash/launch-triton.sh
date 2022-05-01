@@ -3,19 +3,22 @@
 # For the DGX-2 server, we have CUDA 11.2.1
 # See: https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html
 image="nvcr.io/nvidia/tritonserver:21.03-py3"
-# image="dlops/labs:nvidia01"
 
 rootpath="$(realpath $(dirname $(realpath "${BASH_SOURCE[-1]}"))/../)"
+# DGX-2 server specific, comment this out
+rootpath="/DATA1/$username/dlops_project"
 
-repopath="${rootpath}/triton_model_repository/tuberculosis/"
-
-gpus=1
+repopath="${rootpath}/triton_model_repository/SOCOFing/"
 
 username=$(whoami)
 
 deployment=$username
 
 nodeport=30040
+
+gpu=3
+gpu_limit=0
+rootdir='/models'
 
 cat <<EOF >$HOME/${username}-dep.yaml
 apiVersion: apps/v1
@@ -39,17 +42,17 @@ spec:
         image: $image
         resources:
           limits:
-            nvidia.com/gpu: $gpus
+            nvidia.com/gpu: $gpu_limit
         env:
-        - name: HOME
-          value: $HOME
+        - name: CUDA_VISIBLE_DEVICES 
+          value: "$gpu"
         ports:
         - containerPort: 8888
         command: ["/bin/bash"]
-        args: ["-c","tritonserver --model-repository=/models --strict-model-config=true"]
+        args: ["-c","tritonserver --model-repository=${rootdir} --strict-model-config=true"]
         volumeMounts:
         - name: raid
-          mountPath: /models
+          mountPath: ${rootdir}
       volumes:
       - name: raid
         hostPath:

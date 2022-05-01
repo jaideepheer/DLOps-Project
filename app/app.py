@@ -12,7 +12,7 @@ from itertools import product
 model_names = [
     f"ensemble_dali_{model}_{mode}"
     for model, mode in product(
-        ["resnet18", "resnet50"], ["torch", "onnx", "trt_fp32", "trt_fp16", "trt_int8"]
+        ["resnet50"], ["torch", "onnx", "trt_fp32", "trt_fp16", "trt_int8"]
     )
 ]
 
