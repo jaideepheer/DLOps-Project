@@ -1,6 +1,8 @@
 # DL-Ops Project
 
 > Jaideep Singh Heer (M20CS056)
+> Chiranjeev (P21CS007)
+> Himanshu Kumar Anand (M21MA011)
 
 ## Wandb Logs
 
