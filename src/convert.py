@@ -15,6 +15,8 @@ INPUT_SHAPE = (3, *args.image_size)
 OPT_BATCH = 8
 MAX_BATCH = 128
 MIN_BATCH = 1
+# DGX-2 GPUs have 32GB memory
+GPU_MEMORY_MB = 30_000
 
 
 model_kinds = ["torch", "onnx", "trt_fp32", "trt_fp16", "trt_int8"]
@@ -238,15 +240,15 @@ def main():
     basic_shape = "x".join(map(str, INPUT_SHAPE))
 
     os.system(
-        f"trtexec --onnx={ONNX_MODEL_PATH} --explicitBatch --workspace=40000 --optShapes=input__0:{OPT_BATCH}x{basic_shape} --maxShapes=input__0:{MAX_BATCH}x{basic_shape} --minShapes=input__0:{MIN_BATCH}x{basic_shape} --saveEngine={TRT_MODEL_PATH}"
+        f"trtexec --onnx={ONNX_MODEL_PATH} --explicitBatch --workspace={GPU_MEMORY_MB} --optShapes=input__0:{OPT_BATCH}x{basic_shape} --maxShapes=input__0:{MAX_BATCH}x{basic_shape} --minShapes=input__0:{MIN_BATCH}x{basic_shape} --saveEngine={TRT_MODEL_PATH}"
     )
 
     os.system(
-        f"trtexec --onnx={ONNX_MODEL_PATH} --explicitBatch --workspace=40000 --optShapes=input__0:{OPT_BATCH}x{basic_shape} --maxShapes=input__0:{MAX_BATCH}x{basic_shape} --minShapes=input__0:{MIN_BATCH}x{basic_shape} --saveEngine={TRT_MODEL_PATH_FP16} --fp16"
+        f"trtexec --onnx={ONNX_MODEL_PATH} --explicitBatch --workspace={GPU_MEMORY_MB} --optShapes=input__0:{OPT_BATCH}x{basic_shape} --maxShapes=input__0:{MAX_BATCH}x{basic_shape} --minShapes=input__0:{MIN_BATCH}x{basic_shape} --saveEngine={TRT_MODEL_PATH_FP16} --fp16"
     )
 
     os.system(
-        f"trtexec --onnx={ONNX_MODEL_PATH} --explicitBatch --workspace=40000 --optShapes=input__0:{OPT_BATCH}x{basic_shape} --maxShapes=input__0:{MAX_BATCH}x{basic_shape} --minShapes=input__0:{MIN_BATCH}x{basic_shape} --saveEngine={TRT_MODEL_PATH_INT8} --int8"
+        f"trtexec --onnx={ONNX_MODEL_PATH} --explicitBatch --workspace={GPU_MEMORY_MB} --optShapes=input__0:{OPT_BATCH}x{basic_shape} --maxShapes=input__0:{MAX_BATCH}x{basic_shape} --minShapes=input__0:{MIN_BATCH}x{basic_shape} --saveEngine={TRT_MODEL_PATH_INT8} --int8"
     )
 
 
