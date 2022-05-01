@@ -1,7 +1,7 @@
 import sys, os
 import importlib
 from types import SimpleNamespace
-import argparse, torch
+import argparse
 
 
 parser = argparse.ArgumentParser(description="")
@@ -31,10 +31,10 @@ args = importlib.import_module(f"src.config.{parser_args.config}").build_args(
     distributed=parser_args.distributed,
 )
 
-if args["device"] == "cpu":
-    args["device"] = torch.device("cpu")
-else:
-    args["device"] = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# if args["device"] == "cpu":
+#     args["device"] = torch.device("cpu")
+# else:
+#     args["device"] = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 print("Args:-")
 print(args)

@@ -42,7 +42,7 @@ def build_args(*_, task_name=None, model_name=None, root_dir="/workspace", **ove
         "opt_level": "O2",
         "wandb": True,
         "project_name": f"task_{task_name}",
-        "device": "gpu",
+        "device": "cuda",
         "seed": 42,
         "world_size": 4,
         "TF32": True,
