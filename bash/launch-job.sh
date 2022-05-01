@@ -69,7 +69,7 @@ spec:
           mountPath: "${rootdir}"
         # preserve pip cache
         - name: cache
-          mountPath: /.cache
+          mountPath: ~/.cache
         # Shared memory hack
         # https://stackoverflow.com/a/46434614/10027894
         - mountPath: /dev/shm
